@@ -1,57 +1,221 @@
-﻿
-<h2>Chat</h2>
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model List<IdentityUser>
+@{
+    var currentUserId = UserManager.GetUserId(User);
+}
 
-<div>
-    <input type="text" id="userInput" placeholder="User" />
-    <input type="text" id="messageInput" placeholder="Message" />
-    <button id="sendButton">Send</button>
+<h2>Chat</h2>
+<div id="chatContainer">
+
+    <div class="card">
+        <div class="nav-tabs-responsive">
+            <ul id="userTabs" class="nav nav-tabs nav-tabs-underline flex-nowrap text-nowrap mb-0" role="tablist">
+                <!-- User chat tabs will be added here dynamically -->
+            </ul>
+        </div>
+        <div class="card-body tab-content" id="chatContent">
+            <!-- Chat content will be added here dynamically -->
+        </div>
+    </div>
 </div>
-<ul id="messagesList"></ul>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.0/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.10/signalr.min.js"></script>
     <script>
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/chathub")
+            .withUrl("/chatHub") // Replace with the correct URL to your ChatHub
+            .configureLogging(signalR.LogLevel.Information)
             .build();
-
-        connection.on("ReceiveMessage", (user, message) => {
-            fetchMessages();
-        });
 
         connection.start().catch(err => console.error(err.toString()));
 
-        document.getElementById("sendButton").addEventListener("click", async event => {
-            const user = document.getElementById("userInput").value;
-            const content = document.getElementById("messageInput").value;
 
-            // Send the message using SignalR
-            await connection.invoke("SendMessage", user, content).catch(err => console.error(err.toString()));
 
-            // Clear the input fields
-            document.getElementById("userInput").value = "";
-            document.getElementById("messageInput").value = "";
+        connection.on("ReceiveMessage", function (targetUserId, username, message, timestamp) {
+            let messagesContainer = document.getElementById("messages-" + targetUserId);
 
-            event.preventDefault();
+            // Check if the messagesContainer exists
+            if (messagesContainer) {
+                let messageElement = `
+                                    <div class="media-chat-item hstack align-items-start gap-3">
+                                        <a href="#" class="d-block status-indicator-container">
+                                            <img src="/path/to/user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                            <span class="status-indicator bg-success"></span>
+                                        </a>
+                                        <div>
+                                            <div class="media-chat-message">${message}</div>
+                                            <div class="fs-sm text-muted mt-2">${timestamp}</div>
+                                        </div>
+                                    </div>
+                                `;
+                messagesContainer.innerHTML += messageElement;
+            }
         });
+        async function sendMessage(targetUserId) {
+            // Get the message input element for the user
+            let messageInput = document.querySelector(`#user-${targetUserId} .form-control`);
 
-        async function fetchMessages() {
-            const response = await fetch("/Chat/GetMessages");
+            // Get the message text
+            let messageText = messageInput.innerText.trim();
 
-            if (response.ok) {
-                const messages = await response.json();
-                const messagesList = document.getElementById("messagesList");
-                messagesList.innerHTML = "";
-                for (const message of messages) {
-                    const listItem = document.createElement("li");
-                    listItem.textContent = `${message.userName}: ${message.content}`;
-                    messagesList.appendChild(listItem);
+            // Check if the message is not empty
+            if (messageText) {
+                try {
+                    // Send the message to the server
+                    await connection.invoke("SendMessage", targetUserId, messageText);
+
+                    // Append the sent message to the chat for the current user
+                    let messagesContainer = document.getElementById("messages-" + targetUserId);
+                    let messageElement = `
+                                                <div class="media-chat-item media-chat-item-reverse hstack align-items-start gap-3">
+                                            <a href="#" class="d-block status-indicator-container">
+                                                <img src="/path/to/current-user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                                <span class="status-indicator bg-success"></span>
+                                            </a>
+                                            <div>
+                                                <div class="media-chat-message">${messageText}</div>
+                                                <div class="fs-sm text-muted mt-2">${new Date().toLocaleTimeString()}</div>
+                                            </div>
+                                        </div>
+                                    `;
+                    messagesContainer.innerHTML += messageElement;
+
+                    // Clear the message input
+                    messageInput.value = '';
+                } catch (err) {
+                    console.error(err.toString());
                 }
-            } else {
-                console.error("Error fetching messages:", response.statusText);
             }
         }
 
-        document.addEventListener("DOMContentLoaded", fetchMessages);
+        function createChatTab(userId, userName, userImage) {
+            let tab = `
+                                <li class="nav-item" role="presentation">
+                                    <a href="#user-${userId}" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" onclick="switchToChat('${userId}')">
+                                        <div class="status-indicator-container me-2">
+                                            <img src="${userImage}" class="w-32px h-32px rounded-pill" alt="">
+                                            <span class="status-indicator bg-success"></span>
+                                        </div>
+                                        <span class="fw-semibold">${userName}</span>
+                                    </a>
+                                </li>
+                            `;
+
+            let userTabs = document.getElementById("userTabs");
+            userTabs.innerHTML += tab;
+        }
+        function createChatContentContainer(userId, chatHistory) {
+
+            let contentContainer = `
+                                <div class="tab-pane fade" id="user-${userId}" role="tabpanel">
+                                    <div class="media-chat-scrollable mb-3">
+                                        <div class="media-chat vstack gap-2" id="messages-${userId}">
+                                            <!-- Messages will be added here dynamically -->
+                                        </div>
+                                    </div>
+                                    <div class="form-control form-control-content mb-3" contenteditable="" data-placeholder="Type message here and hit enter..."></div>
+                                    <div class="d-flex align-items-center">
+                                        <button type="button" class="btn btn-primary ms-auto" onclick="sendMessage('${userId}')">
+                                            Send
+                                            <i class="ph-paper-plane-tilt ms-2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+
+            let chatContent = document.getElementById("chatContent");
+            chatContent.innerHTML += contentContainer;
+
+
+            let messagesHtml = chatHistory.map(message => {
+                // Format the message HTML based on whether the message was sent or received
+                // Return the formatted message HTML
+            }).join('');
+
+            let messagesContainer = document.getElementById("messages-" + userId);
+            messagesContainer.innerHTML = messagesHtml;
+
+        }
+
+        async function switchToChat(userId) {
+            let tabs = document.getElementsByClassName("nav-link");
+            for (let tab of tabs) {
+                tab.classList.remove("active");
+            }
+
+            let currentTab = document.querySelector(`[href="#user-${userId}"]`);
+            currentTab.classList.add("active");
+
+            let contentContainers = document.getElementsByClassName("tab-pane");
+            for (let container of contentContainers) {
+                container.classList.remove("show");
+                container.classList.remove("active");
+            }
+
+            let currentContentContainer = document.getElementById("user-" + userId);
+            currentContentContainer.classList.add("show");
+            currentContentContainer.classList.add("active");
+
+            const chatHistory = await getChatHistory('@currentUserId', userId);
+            // Populate chat container with fetched messages
+            let messagesContainer = document.getElementById("messages-" + userId);
+            messagesContainer.innerHTML = '';
+            chatHistory.forEach(message => {
+                let messageElement = '';
+                if (message.senderId ==  '@currentUserId') {
+                    messageElement = `
+                                              <div class="media-chat-item media-chat-item-reverse hstack align-items-start gap-3">
+                                        <a href="#" class="d-block status-indicator-container">
+                                          <img src="/path/to/user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                          <span class="status-indicator bg-success"></span>
+                                        </a>
+                                        <div>
+                                          <div class="media-chat-message">${message.content}</div>
+                                          <div class="fs-sm text-muted mt-2">${new Date(message.timestamp).toLocaleTimeString()}</div>
+                                        </div>
+                                      </div>
+                                    `;
+                }
+                else {
+                    messageElement = `
+                              <div class="media-chat-item hstack align-items-start gap-3">
+                                <a href="#" class="d-block status-indicator-container">
+                                  <img src="/path/to/user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                  <span class="status-indicator bg-success"></span>
+                                </a>
+                                <div>
+                                  <div class="media-chat-message">${message.content}</div>
+                                  <div class="fs-sm text-muted mt-2">${new Date(message.timestamp).toLocaleTimeString()}</div>
+                                </div>
+                              </div>
+                            `;
+                }
+                messagesContainer.innerHTML += messageElement;
+            });
+        }
+        async function getChatHistory(currentUser, otherUser) {
+            const response = await fetch(`/Chat/GetChatHistory?currentUser=${currentUser}&otherUser=${otherUser}`);
+            const chatHistory = await response.json();
+            return chatHistory;
+        }
+
     </script>
+
+    @foreach (var user in Model)
+    {
+        if (user.Id != currentUserId)
+        {
+            <script>
+                createChatTab("@user.Id", "@user.UserName", "/path/to/user/image.jpg");
+
+                (async function () {
+                    const chatHistory = await getChatHistory('@currentUserId', '@user.Id');
+                    createChatContentContainer("@user.Id", chatHistory);
+                })();
+            </script>
+        }
+    }
+
 }
