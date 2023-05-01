@@ -1,0 +1,9 @@
+﻿/* chat.css */
+.media-chat-scrollable {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.form-control-content {
+    min-height: 100px;
+}

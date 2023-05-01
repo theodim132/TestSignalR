@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TestSignalR.Data;
 using TestSignalR.Hubs;
+using TestSignalR.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,9 +13,9 @@ builder.Services.AddSignalR();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddIdentityCore<IdentityUser>()
+builder.Services.AddIdentityCore<ApplicationUser>()
         .AddEntityFrameworkStores<ApplicationDbContext>();
 
 var app = builder.Build();

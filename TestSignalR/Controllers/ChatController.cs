@@ -11,9 +11,9 @@ namespace TestSignalR.Controllers
     public class ChatController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ChatController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public ChatController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;

@@ -1,9 +1,10 @@
 ﻿@using Microsoft.AspNetCore.Identity
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
-@model List<IdentityUser>
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@model List<ApplicationUser>
 @{
     var currentUserId = UserManager.GetUserId(User);
+    var currentUser = Model.FirstOrDefault(user => user.Id == currentUserId);
 }
 
 <h2>Chat</h2>
@@ -41,7 +42,7 @@
                 let messageElement = `
                                     <div class="media-chat-item hstack align-items-start gap-3">
                                         <a href="#" class="d-block status-indicator-container">
-                                            <img src="/path/to/user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                                            <img src="@currentUser?.ImagePath" class="w-40px h-40px rounded-pill" alt="">
                                             <span class="status-indicator bg-success"></span>
                                         </a>
                                         <div>
@@ -71,7 +72,7 @@
                     let messageElement = `
                                                 <div class="media-chat-item media-chat-item-reverse hstack align-items-start gap-3">
                                             <a href="#" class="d-block status-indicator-container">
-                                                <img src="/path/to/current-user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                                        <img src="@currentUser?.ImagePath" class="w-40px h-40px rounded-pill" alt="">
                                                 <span class="status-indicator bg-success"></span>
                                             </a>
                                             <div>
@@ -168,7 +169,7 @@
                     messageElement = `
                                               <div class="media-chat-item media-chat-item-reverse hstack align-items-start gap-3">
                                         <a href="#" class="d-block status-indicator-container">
-                                          <img src="/path/to/user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                                  <img src="@currentUser?.ImagePath" class="w-40px h-40px rounded-pill" alt="">
                                           <span class="status-indicator bg-success"></span>
                                         </a>
                                         <div>
@@ -182,7 +183,7 @@
                     messageElement = `
                               <div class="media-chat-item hstack align-items-start gap-3">
                                 <a href="#" class="d-block status-indicator-container">
-                                  <img src="/path/to/user/image.jpg" class="w-40px h-40px rounded-pill" alt="">
+                                          <img src="@currentUser?.ImagePath" class="w-40px h-40px rounded-pill" alt="">
                                   <span class="status-indicator bg-success"></span>
                                 </a>
                                 <div>
@@ -208,7 +209,7 @@
         if (user.Id != currentUserId)
         {
             <script>
-                createChatTab("@user.Id", "@user.UserName", "/path/to/user/image.jpg");
+                createChatTab("@user.Id", "@user.UserName", "@user.ImagePath");
 
                 (async function () {
                     const chatHistory = await getChatHistory('@currentUserId', '@user.Id');
