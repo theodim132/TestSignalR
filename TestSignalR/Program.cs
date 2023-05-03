@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TestSignalR.Data;
 using TestSignalR.Hubs;
 using TestSignalR.Models;
+using TestSignalR.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,18 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.R
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddIdentityCore<ApplicationUser>()
         .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
+builder.Services.AddSingleton<ServiceBusListener>(sp =>
+{
+    // Replace these with your actual Service Bus connection string and queue name
+    string serviceBusConnectionString = "Endpoint=sb://my-argo.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=Qrokrlyxg/QF0qLjnX3TUbhOS3UG3tE5Q+ASbGjOh54=";
+    string queueName = "create";
+
+    return new ServiceBusListener(serviceBusConnectionString, queueName);
+});
+
+builder.Services.AddSingleton<ServiceBusHub>();
 
 var app = builder.Build();
 
@@ -32,6 +45,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub"); // Add this line
+app.MapHub<TestHub>("/testhub"); // Add this line
+app.MapHub<ServiceBusHub>("/servicebushub"); // Add this line
 app.UseRouting();
 app.UseAuthentication();;
 

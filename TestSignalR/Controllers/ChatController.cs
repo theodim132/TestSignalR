@@ -25,6 +25,12 @@ namespace TestSignalR.Controllers
 
             return View(onlineUsers);
         }
+        public IActionResult Test()
+        {
+            var onlineUsers = _userManager.Users.ToList();
+
+            return View(onlineUsers);
+        }
         [HttpGet]
         public async Task<IActionResult> GetMessages()
         {
