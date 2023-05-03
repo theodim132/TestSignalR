@@ -23,8 +23,8 @@ builder.Services.AddIdentityCore<ApplicationUser>()
 builder.Services.AddSingleton<ServiceBusListener>(sp =>
 {
     // Replace these with your actual Service Bus connection string and queue name
-    string serviceBusConnectionString = "Endpoint=sb://my-argo.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=Qrokrlyxg/QF0qLjnX3TUbhOS3UG3tE5Q+ASbGjOh54=";
-    string queueName = "create";
+    string serviceBusConnectionString = "";
+    string queueName = "";
 
     return new ServiceBusListener(serviceBusConnectionString, queueName);
 });
